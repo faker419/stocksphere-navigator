@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -25,6 +27,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Search,
@@ -38,6 +41,16 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Request } from '@/lib/api';
+import { toast } from 'sonner';
+
+// Mock items for the create form
+const mockItems = [
+  { id: '1', name: 'Hydraulic Pump', code: 'HP-001', unit: 'pcs' },
+  { id: '2', name: 'Ball Bearings', code: 'BB-050', unit: 'pcs' },
+  { id: '3', name: 'Conveyor Belt', code: 'CB-445', unit: 'meters' },
+  { id: '4', name: 'Lubricating Oil', code: 'LO-001', unit: 'liters' },
+  { id: '5', name: 'Filter Cartridge', code: 'FC-200', unit: 'pcs' },
+];
 
 // Mock data for demonstration
 const mockRequests: Request[] = [
@@ -100,17 +113,26 @@ const mockRequests: Request[] = [
 ];
 
 const Requests = () => {
-  const { hasPrivilege } = useAuth();
+  const { hasPrivilege, user } = useAuth();
+  const [requests, setRequests] = useState<Request[]>(mockRequests);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // Create form state
+  const [createForm, setCreateForm] = useState({
+    item_id: '',
+    quantity: '',
+    priority: 'medium',
+    reason: '',
+  });
 
   const canApprove = hasPrivilege('can_approve_requests');
   const canFulfill = hasPrivilege('can_fulfill_requests');
-  const canCreate = hasPrivilege('can_create_requests');
 
-  const filteredRequests = mockRequests.filter((request) => {
+  const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.request_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       request.item?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -136,6 +158,50 @@ const Requests = () => {
     setIsDetailOpen(true);
   };
 
+  const handleCreateRequest = () => {
+    if (!createForm.item_id || !createForm.quantity || !createForm.reason) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const selectedItem = mockItems.find(i => i.id === createForm.item_id);
+    if (!selectedItem) return;
+
+    const newRequest: Request = {
+      id: String(requests.length + 1),
+      request_number: `REQ-2024-${String(requests.length + 1).padStart(3, '0')}`,
+      requester_id: user?.id || '1',
+      requester: {
+        id: user?.id || '1',
+        username: user?.username || 'current.user',
+        email: user?.email || 'user@example.com',
+        full_name: user?.full_name || 'Current User',
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+      item_id: createForm.item_id,
+      item: {
+        id: selectedItem.id,
+        name: selectedItem.name,
+        code: selectedItem.code,
+        unit: selectedItem.unit,
+        min_quantity: 0,
+        created_at: '',
+      },
+      quantity: parseInt(createForm.quantity),
+      priority: createForm.priority as 'low' | 'medium' | 'high' | 'critical',
+      status: 'pending',
+      reason: createForm.reason,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setRequests([newRequest, ...requests]);
+    setIsCreateOpen(false);
+    setCreateForm({ item_id: '', quantity: '', priority: 'medium', reason: '' });
+    toast.success('Request created successfully');
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -146,12 +212,10 @@ const Requests = () => {
             Manage and track all stock requests
           </p>
         </div>
-        {canCreate && (
-          <Button variant="default">
-            <Plus className="mr-2 h-4 w-4" />
-            New Request
-          </Button>
-        )}
+        <Button variant="default" onClick={() => setIsCreateOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Request
+        </Button>
       </div>
 
       {/* Filters */}
@@ -272,6 +336,82 @@ const Requests = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Create Request Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Request</DialogTitle>
+            <DialogDescription>Submit a new stock request for approval</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="item">Item *</Label>
+              <Select
+                value={createForm.item_id}
+                onValueChange={(value) => setCreateForm({ ...createForm, item_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an item" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockItems.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name} ({item.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                placeholder="Enter quantity"
+                value={createForm.quantity}
+                onChange={(e) => setCreateForm({ ...createForm, quantity: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select
+                value={createForm.priority}
+                onValueChange={(value) => setCreateForm({ ...createForm, priority: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason *</Label>
+              <Textarea
+                id="reason"
+                placeholder="Describe why this item is needed..."
+                value={createForm.reason}
+                onChange={(e) => setCreateForm({ ...createForm, reason: e.target.value })}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateRequest}>
+              Submit Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Request Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
