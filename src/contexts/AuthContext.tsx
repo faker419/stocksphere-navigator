@@ -1,5 +1,33 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authApi, getTokens, clearTokens, User, Privilege } from '@/lib/api';
+import { clearTokens, User, Privilege } from '@/lib/api';
+
+// Mock user data for development
+const MOCK_USERS = [
+  {
+    username: 'admin',
+    password: 'password',
+    user: {
+      id: '1',
+      username: 'admin',
+      email: 'admin@dsms.com',
+      full_name: 'System Administrator',
+      role_id: '1',
+      role_name: 'Administrator',
+      is_active: true,
+      created_at: new Date().toISOString(),
+    },
+    privileges: [
+      { id: '1', name: 'can_view_requests', description: 'View requests' },
+      { id: '2', name: 'can_approve_requests', description: 'Approve requests' },
+      { id: '3', name: 'can_fulfill_requests', description: 'Fulfill requests' },
+      { id: '4', name: 'can_view_stock', description: 'View stock' },
+      { id: '5', name: 'can_adjust_stock', description: 'Adjust stock' },
+      { id: '6', name: 'can_view_machinery', description: 'View machinery' },
+      { id: '7', name: 'can_manage_users', description: 'Manage users' },
+      { id: '8', name: 'can_manage_roles', description: 'Manage roles' },
+    ],
+  },
+];
 
 interface AuthContextType {
   user: User | null;
@@ -27,40 +55,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [privileges, setPrivileges] = useState<Privilege[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserAndPrivileges = useCallback(async () => {
-    try {
-      const currentUser = await authApi.getCurrentUser();
-      setUser(currentUser);
-      
-      const userPrivileges = await authApi.getUserPrivileges(currentUser.id);
-      setPrivileges(userPrivileges);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      clearTokens();
-      setUser(null);
-      setPrivileges([]);
+  useEffect(() => {
+    // Check for stored session on mount
+    const storedUser = localStorage.getItem('dsms_user');
+    const storedPrivileges = localStorage.getItem('dsms_privileges');
+    
+    if (storedUser && storedPrivileges) {
+      setUser(JSON.parse(storedUser));
+      setPrivileges(JSON.parse(storedPrivileges));
     }
+    setIsLoading(false);
   }, []);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      const { accessToken } = getTokens();
-      if (accessToken) {
-        await fetchUserAndPrivileges();
-      }
-      setIsLoading(false);
-    };
-
-    initAuth();
-  }, [fetchUserAndPrivileges]);
-
   const login = async (username: string, password: string) => {
-    await authApi.login(username, password);
-    await fetchUserAndPrivileges();
+    // Mock authentication
+    const mockUser = MOCK_USERS.find(
+      u => u.username === username && u.password === password
+    );
+
+    if (!mockUser) {
+      throw new Error('Invalid credentials');
+    }
+
+    // Store in localStorage for persistence
+    localStorage.setItem('dsms_user', JSON.stringify(mockUser.user));
+    localStorage.setItem('dsms_privileges', JSON.stringify(mockUser.privileges));
+    localStorage.setItem('dsms_access_token', 'mock_token');
+
+    setUser(mockUser.user);
+    setPrivileges(mockUser.privileges);
   };
 
   const logout = () => {
-    authApi.logout();
+    clearTokens();
+    localStorage.removeItem('dsms_user');
+    localStorage.removeItem('dsms_privileges');
     setUser(null);
     setPrivileges([]);
   };
