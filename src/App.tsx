@@ -12,10 +12,16 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Requests from "./pages/Requests";
 import Inventory from "./pages/Inventory";
+import ItemsPage from "./pages/Items";
+import ItemLabelsPage from "./pages/ItemLabelsPage";
+import ItemCategoriesPage from "./pages/ItemCategories";
+import CategoryImportPage from "./pages/CategoryImport";
 import Machinery from "./pages/Machinery";
+import MachineryImport from "./pages/MachineryImport";
 import UsersPage from "./pages/admin/Users";
 import RolesPage from "./pages/admin/Roles";
 import Notifications from "./pages/Notifications";
+import ActivityLogsPage from "./pages/ActivityLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,12 +64,52 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/items"
+                element={
+                  <ProtectedRoute requiredPrivilege="can_view_items">
+                    <ItemsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/items/categories"
+                element={
+                  <ProtectedRoute requiredPrivilege="can_manage_items">
+                    <ItemCategoriesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/items/labels"
+                element={
+                  <ProtectedRoute requiredPrivilege="can_manage_items">
+                    <ItemLabelsPage />
+                  </ProtectedRoute>
+                }
+              />
+        <Route
+          path="/items/categories/import"
+          element={
+            <ProtectedRoute requiredPrivilege="can_manage_items">
+              <CategoryImportPage />
+            </ProtectedRoute>
+          }
+        />
               
               <Route
                 path="/machinery"
                 element={
                   <ProtectedRoute requiredPrivilege="can_view_machinery">
                     <Machinery />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/machinery/import"
+                element={
+                  <ProtectedRoute requiredPrivilege="can_manage_machinery">
+                    <MachineryImport />
                   </ProtectedRoute>
                 }
               />
@@ -82,6 +128,15 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredPrivilege="can_manage_roles">
                     <RolesPage />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/admin/activity-logs"
+                element={
+                  <ProtectedRoute requiredPrivilege="can_view_activity_logs">
+                    <ActivityLogsPage />
                   </ProtectedRoute>
                 }
               />

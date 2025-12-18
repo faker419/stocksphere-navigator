@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
+import { GongoniIcon } from "@/components/icons/GongoniIcon";
 import {
   LayoutDashboard,
   FileText,
@@ -12,6 +13,7 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -29,12 +31,14 @@ const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Requests', href: '/requests', icon: FileText, privilege: 'can_view_requests' },
   { title: 'Inventory', href: '/inventory', icon: Package, privilege: 'can_view_stock' },
+  { title: 'Items', href: '/items', icon: Package, privilege: 'can_view_items' },
   { title: 'Machinery', href: '/machinery', icon: Wrench, privilege: 'can_view_machinery' },
 ];
 
 const adminNavItems: NavItem[] = [
   { title: 'Users', href: '/admin/users', icon: Users, privilege: 'can_manage_users' },
   { title: 'Roles', href: '/admin/roles', icon: Shield, privilege: 'can_manage_roles' },
+  { title: 'Activity Logs', href: '/admin/activity-logs', icon: History, privilege: 'can_view_activity_logs' },
 ];
 
 export const AppSidebar = () => {
@@ -62,7 +66,7 @@ export const AppSidebar = () => {
         {!collapsed && (
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Package className="h-4 w-4 text-primary-foreground" />
+              <GongoniIcon className="h-4 w-4 text-primary-foreground" /> 
             </div>
             <span className="text-lg font-semibold text-foreground">DSMS</span>
           </div>
