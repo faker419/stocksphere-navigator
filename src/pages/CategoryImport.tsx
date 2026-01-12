@@ -214,7 +214,7 @@ const CategoryImportPage = () => {
           const updated = current.map((row) => {
             // Find matching failed row by row_index
             const failedRow = result.failed_rows.find(
-              (fr: any) => fr.row?.row_index === row.row_index
+              (fr: { row?: { row_index?: number }; errors?: string[] }) => fr.row?.row_index === row.row_index
             );
             if (failedRow && failedRow.errors) {
               return {

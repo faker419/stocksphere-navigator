@@ -36,7 +36,24 @@ import {
   Shield,
   Mail,
 } from 'lucide-react';
-import { User, Role } from '@/lib/api';
+
+// Local types for mock data
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  role_id: string;
+  role: Role;
+  created_at: string;
+}
 
 // Mock data
 const mockRoles: Role[] = [

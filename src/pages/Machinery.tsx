@@ -557,7 +557,8 @@ const MachineryPage = () => {
           </div>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
             <div className="flex gap-2">
-              <Select value={selectedType} onValueChange={setSelectedType} className="flex-1">
+              <div className="flex-1">
+              <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>

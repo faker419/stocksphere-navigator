@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -40,8 +40,41 @@ import {
   Clock,
   AlertTriangle,
 } from 'lucide-react';
-import { Request } from '@/lib/api';
 import { toast } from 'sonner';
+
+// Local types for mock data
+interface MockUser {
+  id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface MockItem {
+  id: string;
+  name: string;
+  code: string;
+  unit: string;
+  min_quantity: number;
+  created_at: string;
+}
+
+interface Request {
+  id: string;
+  request_number: string;
+  requester_id: string;
+  requester: MockUser;
+  item_id: string;
+  item: MockItem;
+  quantity: number;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'pending' | 'approved' | 'rejected' | 'fulfilled' | 'cancelled';
+  reason: string;
+  created_at: string;
+  updated_at: string;
+}
 
 // Mock items for the create form
 const mockItems = [
@@ -112,6 +145,21 @@ const mockRequests: Request[] = [
   },
 ];
 
+const priorityVariants: Record<Request['priority'], BadgeProps['variant']> = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  critical: 'critical',
+};
+
+const statusVariants: Record<Request['status'], BadgeProps['variant']> = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  fulfilled: 'fulfilled',
+  cancelled: 'cancelled',
+};
+
 const Requests = () => {
   const { hasPrivilege, user } = useAuth();
   const [requests, setRequests] = useState<Request[]>(mockRequests);
@@ -170,9 +218,9 @@ const Requests = () => {
     const newRequest: Request = {
       id: String(requests.length + 1),
       request_number: `REQ-2024-${String(requests.length + 1).padStart(3, '0')}`,
-      requester_id: user?.id || '1',
+      requester_id: String(user?.id) || '1',
       requester: {
-        id: user?.id || '1',
+        id: String(user?.id) || '1',
         username: user?.username || 'current.user',
         email: user?.email || 'user@example.com',
         full_name: user?.full_name || 'Current User',
@@ -189,7 +237,7 @@ const Requests = () => {
         created_at: '',
       },
       quantity: parseInt(createForm.quantity),
-      priority: createForm.priority as 'low' | 'medium' | 'high' | 'critical',
+      priority: createForm.priority as Request['priority'],
       status: 'pending',
       reason: createForm.reason,
       created_at: new Date().toISOString(),
@@ -289,10 +337,10 @@ const Requests = () => {
                       {request.quantity} {request.item?.unit}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant={request.priority}>{request.priority}</Badge>
+                      <Badge variant={priorityVariants[request.priority]}>{request.priority}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant={request.status}>{request.status}</Badge>
+                      <Badge variant={statusVariants[request.status]}>{request.status}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(request.created_at)}
@@ -419,9 +467,11 @@ const Requests = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <span className="text-primary">{selectedRequest?.request_number}</span>
-              <Badge variant={selectedRequest?.status as any}>
-                {selectedRequest?.status}
-              </Badge>
+              {selectedRequest && (
+                <Badge variant={statusVariants[selectedRequest.status]}>
+                  {selectedRequest.status}
+                </Badge>
+              )}
             </DialogTitle>
             <DialogDescription>Request details and actions</DialogDescription>
           </DialogHeader>
@@ -445,7 +495,7 @@ const Requests = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Priority</p>
-                  <Badge variant={selectedRequest.priority}>{selectedRequest.priority}</Badge>
+                  <Badge variant={priorityVariants[selectedRequest.priority]}>{selectedRequest.priority}</Badge>
                 </div>
               </div>
               <div className="space-y-1">
@@ -454,30 +504,24 @@ const Requests = () => {
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                Created {formatDate(selectedRequest.created_at)}
-              </div>
-              <div className="flex gap-2 pt-4">
-                {canApprove && selectedRequest.status === 'pending' && (
-                  <>
-                    <Button variant="success" className="flex-1">
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Approve
-                    </Button>
-                    <Button variant="destructive" className="flex-1">
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Reject
-                    </Button>
-                  </>
-                )}
-                {canFulfill && selectedRequest.status === 'approved' && (
-                  <Button variant="default" className="w-full">
-                    <Package className="mr-2 h-4 w-4" />
-                    Fulfill Request
-                  </Button>
-                )}
+                <span>Created: {formatDate(selectedRequest.created_at)}</span>
               </div>
             </div>
           )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
+              Close
+            </Button>
+            {canApprove && selectedRequest?.status === 'pending' && (
+              <>
+                <Button variant="destructive">Reject</Button>
+                <Button>Approve</Button>
+              </>
+            )}
+            {canFulfill && selectedRequest?.status === 'approved' && (
+              <Button>Fulfill Request</Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
