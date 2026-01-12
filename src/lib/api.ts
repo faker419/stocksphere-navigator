@@ -114,16 +114,75 @@ export interface UserResponse {
 
 export type User = UserResponse;
 
+// Mock users for demo mode
+const MOCK_USERS = [
+  {
+    id: 1,
+    username: "admin",
+    password: "password",
+    email: "admin@dsms.local",
+    full_name: "System Administrator",
+    is_active: true,
+    roles: [{ id: 1, name: "Admin", description: "Full access" }],
+  },
+  {
+    id: 2,
+    username: "user",
+    password: "password",
+    email: "user@dsms.local",
+    full_name: "Regular User",
+    is_active: true,
+    roles: [{ id: 2, name: "User", description: "Basic access" }],
+  },
+];
+
+const MOCK_PRIVILEGES = [
+  { id: 1, code: "REQUEST_VIEW_ALL", name: "View All Requests" },
+  { id: 2, code: "REQUEST_VIEW_OWN", name: "View Own Requests" },
+  { id: 3, code: "REQUEST_CREATE", name: "Create Requests" },
+  { id: 4, code: "APPROVAL_APPROVE", name: "Approve Requests" },
+  { id: 5, code: "FULFILLMENT_FULFILL", name: "Fulfill Requests" },
+  { id: 6, code: "STOCK_VIEW", name: "View Stock" },
+  { id: 7, code: "STOCK_ADJUST", name: "Adjust Stock" },
+  { id: 8, code: "MACHINERY_VIEW", name: "View Machinery" },
+  { id: 9, code: "MACHINERY_MODIFY", name: "Modify Machinery" },
+  { id: 10, code: "ITEM_VIEW", name: "View Items" },
+  { id: 11, code: "ITEM_CREATE", name: "Create Items" },
+  { id: 12, code: "ITEM_MODIFY", name: "Modify Items" },
+  { id: 13, code: "ITEM_DELETE", name: "Delete Items" },
+  { id: 14, code: "ITEM_CATEGORY_MANAGE", name: "Manage Item Categories" },
+  { id: 15, code: "USER_MODIFY", name: "Modify Users" },
+  { id: 16, code: "USER_ASSIGN_ROLES", name: "Assign User Roles" },
+  { id: 17, code: "ROLE_MODIFY", name: "Modify Roles" },
+  { id: 18, code: "ROLE_ASSIGN_PRIVILEGES", name: "Assign Role Privileges" },
+  { id: 19, code: "ACTIVITY_LOG_VIEW", name: "View Activity Logs" },
+  { id: 20, code: "ACTIVITY_LOG_CLEANUP", name: "Cleanup Activity Logs" },
+];
+
+let currentMockUser: (typeof MOCK_USERS)[0] | null = null;
+
 export async function login(
   username: string,
   password: string
 ): Promise<LoginResponse> {
-  const form = new URLSearchParams();
-  form.append("username", username);
-  form.append("password", password);
-  form.append("grant_type", "");
+  // Mock login - simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
-  return requestForm<LoginResponse>("/api/v1/auth/login", form);
+  const user = MOCK_USERS.find(
+    (u) => u.username === username && u.password === password
+  );
+
+  if (!user) {
+    throw new Error("Invalid username or password");
+  }
+
+  currentMockUser = user;
+
+  return {
+    access_token: `mock_token_${user.id}_${Date.now()}`,
+    refresh_token: `mock_refresh_${user.id}_${Date.now()}`,
+    token_type: "bearer",
+  };
 }
 
 export async function refreshToken(
@@ -139,6 +198,19 @@ export async function refreshToken(
 export async function getCurrentUser(
   accessToken: string
 ): Promise<UserResponse> {
+  // Mock implementation - return the current mock user
+  if (currentMockUser) {
+    return {
+      id: currentMockUser.id,
+      username: currentMockUser.username,
+      email: currentMockUser.email,
+      full_name: currentMockUser.full_name,
+      is_active: currentMockUser.is_active,
+      roles: currentMockUser.roles,
+    };
+  }
+
+  // Fallback to API call if no mock user (shouldn't happen with mock login)
   const raw = await request<any>("/api/v1/auth/me", {
     method: "GET",
     token: accessToken,
@@ -1325,6 +1397,17 @@ export async function getUserPrivileges(
   userId: number,
   token?: string | null
 ): Promise<PrivilegeResponse[]> {
+  // Mock implementation - return all privileges for demo
+  if (currentMockUser && currentMockUser.id === userId) {
+    return MOCK_PRIVILEGES.map((p) => ({
+      id: p.id,
+      code: p.code,
+      name: p.name,
+      category: undefined,
+    }));
+  }
+
+  // Fallback to API call
   const raw = await request<{ user_id: number; privileges: string[] }>(
     `/api/v1/users/${userId}/privileges`,
     {
@@ -1347,9 +1430,12 @@ export async function getUserPrivileges(
 
 export interface NotificationResponse {
   id: number;
+  user_id: number;
+  title: string;
   message: string;
+  type: 'success' | 'warning' | 'error' | 'info';
+  is_read: boolean;
   created_at: string;
-  read?: boolean;
 }
 
 export type Notification = NotificationResponse;

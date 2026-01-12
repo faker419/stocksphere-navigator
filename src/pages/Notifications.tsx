@@ -12,11 +12,22 @@ import {
   Check,
   Trash2,
 } from 'lucide-react';
-import { Notification } from '@/lib/api';
+import type { Notification } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
+// Local mock type that extends the API type
+interface MockNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'success' | 'warning' | 'error' | 'info';
+  is_read: boolean;
+  created_at: string;
+}
+
 // Mock data
-const mockNotifications: Notification[] = [
+const mockNotifications: MockNotification[] = [
   {
     id: '1',
     user_id: '1',
@@ -74,11 +85,11 @@ const mockNotifications: Notification[] = [
 ];
 
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<MockNotification[]>(mockNotifications);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  const getIcon = (type: Notification['type']) => {
+  const getIcon = (type: MockNotification['type']) => {
     switch (type) {
       case 'success':
         return <CheckCircle className="h-5 w-5 text-success" />;

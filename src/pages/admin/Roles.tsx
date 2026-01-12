@@ -27,8 +27,23 @@ import {
   Wrench,
   Settings,
 } from 'lucide-react';
-import { Role, Privilege } from '@/lib/api';
 import { cn } from '@/lib/utils';
+
+// Local types for mock data
+interface Privilege {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  privileges?: Privilege[];
+  userCount?: number;
+}
 
 // Mock data
 const mockPrivileges: Privilege[] = [
@@ -48,7 +63,7 @@ const mockPrivileges: Privilege[] = [
   { id: '10', name: 'can_manage_roles', description: 'Manage roles and permissions', category: 'Administration' },
 ];
 
-const mockRoles: (Role & { privileges?: Privilege[]; userCount?: number })[] = [
+const mockRoles: Role[] = [
   {
     id: '1',
     name: 'Admin',
@@ -93,7 +108,7 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const RolesPage = () => {
-  const [selectedRole, setSelectedRole] = useState<typeof mockRoles[0] | null>(mockRoles[0]);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(mockRoles[0]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPrivileges, setSelectedPrivileges] = useState<string[]>([]);
@@ -106,7 +121,7 @@ const RolesPage = () => {
     return acc;
   }, {} as Record<string, Privilege[]>);
 
-  const handleSelectRole = (role: typeof mockRoles[0]) => {
+  const handleSelectRole = (role: Role) => {
     setSelectedRole(role);
     setSelectedPrivileges(role.privileges?.map((p) => p.id) || []);
     setIsEditMode(false);

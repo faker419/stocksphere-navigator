@@ -38,7 +38,28 @@ import {
   Minus,
   Warehouse,
 } from 'lucide-react';
-import { StockItem, Store } from '@/lib/api';
+
+// Local types for mock data
+interface Store {
+  id: string;
+  name: string;
+  location: string;
+  is_active: boolean;
+}
+
+interface StockItem {
+  store_id: string;
+  quantity: number;
+  item: {
+    id: string;
+    name: string;
+    code: string;
+    unit: string;
+    min_quantity: number;
+    category: string;
+    created_at: string;
+  };
+}
 
 // Mock data
 const mockStores: Store[] = [
